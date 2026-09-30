@@ -1,0 +1,33 @@
+{
+  "name": "prototyping-session---pak-yohan",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Action Radar — prototype dashboard mobile-first untuk Brand AM Lead (SIRCLO Commerce).",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "build:prototype": "tailwindcss -i prototype/prototype.src.css -o prototype/prototype.css --minify",
+    "test": "node run-checkpoint.ts",
+    "test:critical": "node run-checkpoint.ts --priority=critical",
+    "test:zero-div": "node run-checkpoint.ts --category=zero-division",
+    "test:verbose": "node run-checkpoint.ts --verbose"
+  },
+  "dependencies": {
+    "lucide-react": "1.49.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.1"
+  }
+}

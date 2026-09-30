@@ -1,0 +1,826 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0B0F14" />
+    <title>Action Radar — Static Prototype</title>
+    <!--
+      ========================================================================
+      STATIC PROTOTYPE — Action Radar
+      ========================================================================
+      Tanpa build step, tanpa JavaScript, tanpa dependency runtime.
+      Buka langsung file ini di browser (double-click juga bisa).
+
+      Perpindahan state pakai radio + CSS :has() di prototype.css.
+
+      SEMUA ANGKA di halaman ini adalah output persis dari logic engine
+      (src/lib/logic.ts) terhadap sample_data.json pada jam ke-4 campaign.
+      Tidak ada angka karangan. Kalau data/threshold berubah, angka di sini
+      HARUS di-regenerate, jangan diedit manual satu-satu.
+      ========================================================================
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./prototype.css" />
+  </head>
+  <body class="bg-base text-primary">
+    <!-- ==================== ICON SPRITE (Lucide, inline = offline-safe) ==================== -->
+    <svg width="0" height="0" class="absolute" aria-hidden="true" focusable="false">
+      <symbol id="i-circle-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" />
+      </symbol>
+      <symbol id="i-triangle-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" />
+      </symbol>
+      <symbol id="i-shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" />
+      </symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+      </symbol>
+      <symbol id="i-wallet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" /><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />
+      </symbol>
+      <symbol id="i-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.29 7 12 12 20.71 7" /><path d="M12 22V12" /><path d="m7.5 4.27 9 5.15" />
+      </symbol>
+      <symbol id="i-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m12 14 4-4" /><path d="M3.34 19a10 10 0 1 1 17.32 0" />
+      </symbol>
+      <symbol id="i-radar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19.07 4.93A10 10 0 0 0 6.99 3.34" /><path d="M4 6h.01" /><path d="M2.29 9.62A10 10 0 1 0 21.31 8.35" /><path d="M16.24 7.76A6 6 0 1 0 8.23 16.67" /><path d="M12 18h.01" /><path d="M17.99 11.66A6 6 0 0 1 15.77 16.67" /><circle cx="12" cy="12" r="2" /><path d="m13.41 10.59 5.66-5.66" />
+      </symbol>
+      <symbol id="i-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /><path d="M5 3v4" /><path d="M19 17v4" /><path d="M3 5h4" /><path d="M17 19h4" />
+      </symbol>
+      <symbol id="i-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 4h-7" /><path d="M10 4H3" /><path d="M21 12h-9" /><path d="M8 12H3" /><path d="M21 20h-5" /><path d="M12 20H3" /><path d="M14 2v4" /><path d="M8 10v4" /><path d="M16 18v4" />
+      </symbol>
+      <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+      </symbol>
+      <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+      </symbol>
+    </svg>
+
+    <!--
+      ==================== STATE RADIOS ====================
+      Harus tetap di root <body> supaya selector :has() di prototype.css bisa
+      menjangkau seluruh halaman. Visually hidden, tapi tetap fokusable —
+      focus ring-nya dipindahkan ke chip yang bersangkutan.
+    -->
+    <input type="radio" name="state" id="s-empty" class="sr-only" aria-label="State 1: Empty State" />
+    <input type="radio" name="state" id="s-loading" class="sr-only" aria-label="State 2: Loading" />
+    <input type="radio" name="state" id="s-ready" class="sr-only" aria-label="State 3: List Prioritas" checked />
+    <input type="radio" name="state" id="s-toast" class="sr-only" aria-label="State 4: Toast Alert" />
+    <input type="radio" name="state" id="s-budget-waspada" class="sr-only" aria-label="State 5: Budget Waspada" />
+    <input type="radio" name="state" id="s-budget-kritis" class="sr-only" aria-label="State 6: Budget Kritis" />
+    <input type="radio" name="state" id="s-all-safe" class="sr-only" aria-label="State 7: Semua Aman" />
+
+    <div class="mx-auto w-full max-w-5xl px-4 pb-16">
+      <!-- ==================== PROTOTYPE CHROME (bukan bagian produk) ==================== -->
+      <header class="pt-8 pb-4">
+        <p class="text-badge uppercase text-accent">Prototyping Phase · Static</p>
+        <h1 class="mt-2 text-display text-primary">Action Radar — Prototype Statis</h1>
+        <p class="mt-2 max-w-2xl text-body text-secondary">
+          Semua UX state dari PRODUCT_SPEC.md Section 4 dalam satu halaman, tanpa build
+          dan tanpa JavaScript. Angka yang tampil adalah output persis logic engine
+          terhadap <span class="text-body-strong text-primary">sample_data.json</span>
+          pada jam ke-4 campaign.
+        </p>
+      </header>
+
+      <!-- State switcher -->
+      <nav
+        aria-label="Pilih state yang ditampilkan"
+        class="sticky top-0 z-40 -mx-4 mb-4 border-b border-subtle bg-base/95 px-4 py-3 backdrop-blur"
+      >
+        <div class="flex flex-wrap gap-2">
+          <label for="s-empty" class="state-chip tap-target flex cursor-pointer items-center rounded-md border border-subtle px-3 py-2 text-caption text-secondary transition-colors duration-[120ms] ease-out hover:bg-surface">1 · Empty State</label>
+          <label for="s-loading" class="state-chip tap-target flex cursor-pointer items-center rounded-md border border-subtle px-3 py-2 text-caption text-secondary transition-colors duration-[120ms] ease-out hover:bg-surface">2 · Loading</label>
+          <label for="s-ready" class="state-chip tap-target flex cursor-pointer items-center rounded-md border border-subtle px-3 py-2 text-caption text-secondary transition-colors duration-[120ms] ease-out hover:bg-surface">3 · List Prioritas</label>
+          <label for="s-toast" class="state-chip tap-target flex cursor-pointer items-center rounded-md border border-subtle px-3 py-2 text-caption text-secondary transition-colors duration-[120ms] ease-out hover:bg-surface">4 · Toast Alert</label>
+          <label for="s-budget-waspada" class="state-chip tap-target flex cursor-pointer items-center rounded-md border border-subtle px-3 py-2 text-caption text-secondary transition-colors duration-[120ms] ease-out hover:bg-surface">5 · Budget Waspada</label>
+          <label for="s-budget-kritis" class="state-chip tap-target flex cursor-pointer items-center rounded-md border border-subtle px-3 py-2 text-caption text-secondary transition-colors duration-[120ms] ease-out hover:bg-surface">6 · Budget Kritis</label>
+          <label for="s-all-safe" class="state-chip tap-target flex cursor-pointer items-center rounded-md border border-subtle px-3 py-2 text-caption text-secondary transition-colors duration-[120ms] ease-out hover:bg-surface">7 · Semua Aman</label>
+        </div>
+
+        <!-- Keterangan per state -->
+        <div class="mt-3 text-caption text-disabled">
+          <p class="view on-empty">
+            PRODUCT_SPEC 4.1 — Budget Campaign belum diisi. Tidak menampilkan list SKU kosong.
+            Tombol di dalamnya aktif: klik untuk lanjut ke state 3.
+          </p>
+          <p class="view on-loading">
+            PRODUCT_SPEC 4.2 — 3 skeleton card, pulse 1,5s. Target durasi di bawah 3 detik.
+          </p>
+          <p class="view on-ready">
+            PRODUCT_SPEC 4.3 — 7 SKU terurut oleh Prioritized Action Score (TECH_SPEC 3.5).
+            Budget Safe Rp14,9 jt dari Rp15 jt.
+          </p>
+          <p class="view on-toast">
+            PRODUCT_SPEC 4.4 — Toast untuk FR-002 yang baru menembus KRITIS. Auto-dismiss 6s di app;
+            di prototype ini tombol X dan "Lihat FR-002" mengembalikan ke state 3.
+          </p>
+          <p class="view on-budget-waspada">
+            Uji threshold budget 🟡 — data SKU sama, Budget Campaign diisi Rp100 rb supaya
+            sisa budget jatuh ke 27% (di bawah 30%, di atas 10%). Nominal kecil disengaja
+            untuk memicu threshold, bukan skenario bisnis riil.
+          </p>
+          <p class="view on-budget-kritis">
+            Uji threshold budget 🔴 — Budget Campaign diisi Rp80 rb, sisa 9% (di bawah 10%).
+            Perhatikan: badge campaign merah sementara mayoritas SKU tidak berubah.
+          </p>
+          <p class="view on-all-safe">
+            TECH_SPEC Section 4 edge case #6 — semua SKU AMAN. Tidak ada badge merah sama sekali.
+            Ini kondisi valid, bukan bug atau layar rusak.
+          </p>
+        </div>
+      </nav>
+
+      <!-- ==================== DEVICE FRAME (mobile-first, 375–430px) ==================== -->
+      <div class="flex flex-col items-center">
+        <p class="mb-2 text-caption text-disabled">Viewport target: 375–430px</p>
+        <div
+          class="relative w-full max-w-[430px] overflow-hidden rounded-lg border border-subtle bg-base"
+        >
+          <div class="min-h-[720px] px-4 pb-24">
+            <!-- App header -->
+            <header class="flex items-center gap-2 pt-8 pb-6">
+              <svg class="size-6 text-accent" aria-hidden="true"><use href="#i-radar" /></svg>
+              <h2 class="text-display text-primary">Action Radar</h2>
+            </header>
+
+            <!-- ============================================================
+                 STATE 1 — EMPTY STATE (PRODUCT_SPEC 4.1 / design.md 5.5)
+                 ============================================================ -->
+            <div class="view on-empty py-8">
+              <div class="flex flex-col items-center text-center">
+                <svg class="size-16 text-disabled" aria-hidden="true"><use href="#i-radar" /></svg>
+                <h3 class="mt-4 text-heading text-primary">Belum ada campaign aktif</h3>
+                <p class="mt-2 max-w-sm text-body text-secondary">
+                  Set Budget Campaign untuk mulai monitoring. Action Radar akan mengurutkan SKU
+                  dari paling mendesak ke paling aman.
+                </p>
+              </div>
+
+              <!-- Input zone — satu-satunya input manual (TECH_SPEC Section 1) -->
+              <div class="mt-6 rounded-md bg-surface p-3 shadow-card">
+                <span class="flex items-center gap-2 text-body-strong text-primary">
+                  <svg class="size-4" aria-hidden="true"><use href="#i-wallet" /></svg>
+                  Budget Campaign
+                </span>
+                <p class="mt-1 text-caption text-secondary">
+                  Diisi sekali per campaign. Dipakai sebagai basis Budget Safe.
+                </p>
+
+                <div
+                  class="mt-3 flex items-center gap-2 rounded-md border border-subtle bg-surface px-3 focus-within:outline-2 focus-within:outline-accent"
+                >
+                  <span class="text-body-strong text-secondary">Rp</span>
+                  <input
+                    id="budget-input"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    placeholder="15.000.000"
+                    aria-label="Budget Campaign dalam Rupiah"
+                    class="min-h-[44px] w-full bg-transparent text-body-strong text-primary placeholder:text-disabled focus:outline-none"
+                  />
+                </div>
+                <p class="mt-2 text-caption text-disabled">
+                  Masukkan nominal lebih dari 0 untuk mulai monitoring.
+                </p>
+
+                <div class="mt-4 flex flex-col gap-2">
+                  <label
+                    for="s-ready"
+                    class="tap-target flex cursor-pointer items-center justify-center rounded-md bg-accent px-5 py-3 text-body-strong text-white transition-colors duration-[120ms] ease-out hover:bg-accent-hover"
+                  >Mulai Monitoring</label>
+                  <label
+                    for="s-ready"
+                    class="tap-target flex cursor-pointer items-center justify-center gap-2 rounded-md border border-subtle px-5 py-3 text-body-strong text-primary transition-colors duration-[120ms] ease-out hover:bg-surface-raised"
+                  >
+                    <svg class="size-5" aria-hidden="true"><use href="#i-sparkles" /></svg>
+                    Muat Sample Data (Rp15.000.000)
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- ============================================================
+                 BUDGET SAFE HEADER — 4 varian threshold
+                 ============================================================ -->
+
+            <!-- 🟢 AMAN (budget Rp15 jt, sisa 99%) — dipakai di state 2, 3, 4 -->
+            <section
+              class="view on-loading on-ready on-toast mb-6 rounded-md bg-surface p-3 shadow-card"
+              aria-label="Ringkasan Budget Safe campaign"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-caption text-secondary">Double-Day Mega Campaign 10.10</p>
+                  <h3 class="mt-1 text-heading text-primary">Budget Safe</h3>
+                </div>
+                <label
+                  for="s-empty"
+                  aria-label="Ubah Budget Campaign"
+                  class="tap-target -mr-2 -mt-2 flex cursor-pointer items-center justify-center rounded-md p-2 text-secondary transition-colors duration-[120ms] ease-out hover:text-primary"
+                ><svg class="size-5" aria-hidden="true"><use href="#i-sliders" /></svg></label>
+              </div>
+              <div class="mt-3 flex flex-wrap items-baseline gap-2">
+                <span class="text-display text-safe">Rp14,9 jt</span>
+                <span class="text-caption text-secondary">dari Rp15 jt · 99% tersisa</span>
+              </div>
+              <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-raised">
+                <div class="h-full rounded-full bg-safe" style="width: 99.51%"></div>
+              </div>
+              <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-subtle pt-3">
+                <span class="inline-flex items-center gap-1 rounded-sm bg-safe-subtle px-2 py-1 text-badge uppercase text-safe">
+                  <svg class="size-3" aria-hidden="true"><use href="#i-shield-check" /></svg>Budget Aman
+                </span>
+                <span class="text-caption text-secondary">
+                  Kerugian below COGS:
+                  <span class="text-body-strong text-critical">Rp73.200</span>
+                </span>
+              </div>
+              <p class="mt-2 text-body text-secondary">
+                <span class="text-body-strong text-critical">3 SKU</span> butuh tindakan sekarang.
+              </p>
+            </section>
+
+            <!-- 🟡 WASPADA (budget Rp100 rb, sisa 27%) -->
+            <section
+              class="view on-budget-waspada mb-6 rounded-md bg-surface p-3 shadow-card"
+              aria-label="Ringkasan Budget Safe campaign"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-caption text-secondary">Double-Day Mega Campaign 10.10</p>
+                  <h3 class="mt-1 text-heading text-primary">Budget Safe</h3>
+                </div>
+                <label
+                  for="s-empty"
+                  aria-label="Ubah Budget Campaign"
+                  class="tap-target -mr-2 -mt-2 flex cursor-pointer items-center justify-center rounded-md p-2 text-secondary transition-colors duration-[120ms] ease-out hover:text-primary"
+                ><svg class="size-5" aria-hidden="true"><use href="#i-sliders" /></svg></label>
+              </div>
+              <div class="mt-3 flex flex-wrap items-baseline gap-2">
+                <span class="text-display text-warning">Rp27 rb</span>
+                <span class="text-caption text-secondary">dari Rp100 rb · 27% tersisa</span>
+              </div>
+              <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-raised">
+                <div class="h-full rounded-full bg-warning" style="width: 26.8%"></div>
+              </div>
+              <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-subtle pt-3">
+                <span class="inline-flex items-center gap-1 rounded-sm bg-warning-subtle px-2 py-1 text-badge uppercase text-warning">
+                  <svg class="size-3" aria-hidden="true"><use href="#i-triangle-alert" /></svg>Budget Waspada
+                </span>
+                <span class="text-caption text-secondary">
+                  Kerugian below COGS:
+                  <span class="text-body-strong text-critical">Rp73.200</span>
+                </span>
+              </div>
+              <p class="mt-2 text-body text-secondary">
+                <span class="text-body-strong text-critical">3 SKU</span> butuh tindakan sekarang.
+              </p>
+            </section>
+
+            <!-- 🔴 KRITIS (budget Rp80 rb, sisa 9%) -->
+            <section
+              class="view on-budget-kritis mb-6 rounded-md bg-surface p-3 shadow-card"
+              aria-label="Ringkasan Budget Safe campaign"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-caption text-secondary">Double-Day Mega Campaign 10.10</p>
+                  <h3 class="mt-1 text-heading text-primary">Budget Safe</h3>
+                </div>
+                <label
+                  for="s-empty"
+                  aria-label="Ubah Budget Campaign"
+                  class="tap-target -mr-2 -mt-2 flex cursor-pointer items-center justify-center rounded-md p-2 text-secondary transition-colors duration-[120ms] ease-out hover:text-primary"
+                ><svg class="size-5" aria-hidden="true"><use href="#i-sliders" /></svg></label>
+              </div>
+              <div class="mt-3 flex flex-wrap items-baseline gap-2">
+                <span class="text-display text-critical">Rp7 rb</span>
+                <span class="text-caption text-secondary">dari Rp80 rb · 9% tersisa</span>
+              </div>
+              <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-raised">
+                <div class="h-full rounded-full bg-critical" style="width: 8.5%"></div>
+              </div>
+              <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-subtle pt-3">
+                <span class="inline-flex items-center gap-1 rounded-sm bg-critical-subtle px-2 py-1 text-badge uppercase text-critical">
+                  <svg class="size-3" aria-hidden="true"><use href="#i-circle-alert" /></svg>Budget Kritis
+                </span>
+                <span class="text-caption text-secondary">
+                  Kerugian below COGS:
+                  <span class="text-body-strong text-critical">Rp73.200</span>
+                </span>
+              </div>
+              <p class="mt-2 text-body text-secondary">
+                <span class="text-body-strong text-critical">3 SKU</span> butuh tindakan sekarang.
+              </p>
+            </section>
+
+            <!-- 🟢 AMAN tanpa SKU kritis (edge case #6) -->
+            <section
+              class="view on-all-safe mb-6 rounded-md bg-surface p-3 shadow-card"
+              aria-label="Ringkasan Budget Safe campaign"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="truncate text-caption text-secondary">Double-Day Mega Campaign 10.10</p>
+                  <h3 class="mt-1 text-heading text-primary">Budget Safe</h3>
+                </div>
+                <label
+                  for="s-empty"
+                  aria-label="Ubah Budget Campaign"
+                  class="tap-target -mr-2 -mt-2 flex cursor-pointer items-center justify-center rounded-md p-2 text-secondary transition-colors duration-[120ms] ease-out hover:text-primary"
+                ><svg class="size-5" aria-hidden="true"><use href="#i-sliders" /></svg></label>
+              </div>
+              <div class="mt-3 flex flex-wrap items-baseline gap-2">
+                <span class="text-display text-safe">Rp15 jt</span>
+                <span class="text-caption text-secondary">dari Rp15 jt · 100% tersisa</span>
+              </div>
+              <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-raised">
+                <div class="h-full rounded-full bg-safe" style="width: 100%"></div>
+              </div>
+              <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-subtle pt-3">
+                <span class="inline-flex items-center gap-1 rounded-sm bg-safe-subtle px-2 py-1 text-badge uppercase text-safe">
+                  <svg class="size-3" aria-hidden="true"><use href="#i-shield-check" /></svg>Budget Aman
+                </span>
+                <span class="text-caption text-secondary">
+                  Kerugian below COGS:
+                  <span class="text-body-strong text-safe">Rp0</span>
+                </span>
+              </div>
+            </section>
+
+            <!-- ============================================================
+                 STATE 2 — LOADING (PRODUCT_SPEC 4.2 / design.md 5.6)
+                 ============================================================ -->
+            <div class="view on-loading" aria-busy="true">
+              <h3 class="mb-3 text-heading text-primary">Prioritas Tindakan</h3>
+              <p class="mb-3 text-body text-secondary">Menghitung data dari 3 platform...</p>
+              <div class="flex flex-col gap-2">
+                <div class="rounded-md border-l-[3px] border-l-subtle bg-surface p-3 shadow-card">
+                  <div class="animate-skeleton h-[22px] w-24 rounded-sm bg-surface-raised"></div>
+                  <div class="animate-skeleton mt-2 h-[25px] w-3/4 rounded-sm bg-surface-raised"></div>
+                  <div class="animate-skeleton mt-2 h-[17px] w-1/3 rounded-sm bg-surface-raised"></div>
+                  <div class="mt-3 grid grid-cols-2 gap-3 border-t border-subtle pt-3">
+                    <div class="animate-skeleton h-[38px] rounded-sm bg-surface-raised"></div>
+                    <div class="animate-skeleton h-[38px] rounded-sm bg-surface-raised"></div>
+                    <div class="animate-skeleton h-[38px] rounded-sm bg-surface-raised"></div>
+                    <div class="animate-skeleton h-[38px] rounded-sm bg-surface-raised"></div>
+                  </div>
+                  <div class="animate-skeleton mt-3 h-[21px] w-full rounded-sm bg-surface-raised"></div>
+                </div>
+                <div class="rounded-md border-l-[3px] border-l-subtle bg-surface p-3 shadow-card">
+                  <div class="animate-skeleton h-[22px] w-24 rounded-sm bg-surface-raised"></div>
+                  <div class="animate-skeleton mt-2 h-[25px] w-3/4 rounded-sm bg-surface-raised"></div>
+                  <div class="animate-skeleton mt-2 h-[17px] w-1/3 rounded-sm bg-surface-raised"></div>
+                  <div class="mt-3 grid grid-cols-2 gap-3 border-t border-subtle pt-3">
+                    <div class="animate-skeleton h-[38px] rounded-sm bg-surface-raised"></div>
+                    <div class="animate-skeleton h-[38px] rounded-sm bg-surface-raised"></div>
+                    <div class="animate-skeleton h-[38px] rounded-sm bg-surface-raised"></div>
+                    <div class="animate-skeleton h-[38px] rounded-sm bg-surface-raised"></div>
+                  </div>
+                  <div class="animate-skeleton mt-3 h-[21px] w-full rounded-sm bg-surface-raised"></div>
+                </div>
+                <div class="rounded-md border-l-[3px] border-l-subtle bg-surface p-3 shadow-card">
+                  <div class="animate-skeleton h-[22px] w-24 rounded-sm bg-surface-raised"></div>
+                  <div class="animate-skeleton mt-2 h-[25px] w-3/4 rounded-sm bg-surface-raised"></div>
+                  <div class="animate-skeleton mt-2 h-[17px] w-1/3 rounded-sm bg-surface-raised"></div>
+                  <div class="mt-3 grid grid-cols-2 gap-3 border-t border-subtle pt-3">
+                    <div class="animate-skeleton h-[38px] rounded-sm bg-surface-raised"></div>
+                    <div class="animate-skeleton h-[38px] rounded-sm bg-surface-raised"></div>
+                    <div class="animate-skeleton h-[38px] rounded-sm bg-surface-raised"></div>
+                    <div class="animate-skeleton h-[38px] rounded-sm bg-surface-raised"></div>
+                  </div>
+                  <div class="animate-skeleton mt-3 h-[21px] w-full rounded-sm bg-surface-raised"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ============================================================
+                 STATE 3/4/5/6/7 — LIST PRIORITAS
+                 Urutan = output sortByPriority() (TECH_SPEC 3.5)
+                 ============================================================ -->
+            <section
+              class="view on-ready on-toast on-budget-waspada on-budget-kritis on-all-safe"
+              aria-label="Daftar SKU prioritas"
+            >
+              <div class="mb-3 flex items-baseline justify-between gap-2">
+                <h3 class="text-heading text-primary">Prioritas Tindakan</h3>
+                <span class="text-caption text-secondary">
+                  <span class="count-full">7 SKU</span><span class="count-safe">3 SKU</span>
+                  · jam ke-4 campaign
+                </span>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <!-- #1 FR-002 — KRITIS (oversold). Edge case learnings.md #2 -->
+                <article
+                  class="hide-on-all-safe rounded-md border-l-[3px] border-l-critical bg-surface p-3 shadow-card"
+                >
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1 rounded-sm bg-critical-subtle px-2 py-1 text-badge uppercase text-critical">
+                      <svg class="size-3" aria-hidden="true"><use href="#i-circle-alert" /></svg>Kritis
+                    </span>
+                    <span class="inline-flex items-center rounded-sm bg-critical-subtle px-2 py-1 text-badge uppercase text-critical">Oversell</span>
+                  </div>
+                  <h4 class="mt-2 text-heading text-primary">Eau de Parfum 50ml</h4>
+                  <p class="mt-1 text-caption text-secondary">FR-002 · LUMORA</p>
+                  <div class="mt-3 grid grid-cols-2 gap-3 border-t border-subtle pt-3">
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-clock" /></svg>Habis dalam</span>
+                      <span class="text-body-strong text-critical">Habis / oversell</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-wallet" /></svg>Under COGS</span>
+                      <span class="text-body-strong text-safe">Rp1.548.000</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-package" /></svg>Sisa stock gudang</span>
+                      <span class="text-body-strong text-critical">-3 unit</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-gauge" /></svg>Runrate</span>
+                      <span class="text-body-strong text-primary">3 unit/jam</span>
+                    </div>
+                  </div>
+                  <p class="mt-3 text-body text-secondary">
+                    Stock tercatat oversell — cek alokasi gudang vs seller center, kemungkinan data
+                    belum sinkron. Jangan langsung anggap habis.
+                  </p>
+                </article>
+
+                <!-- #2 HC-005 — KRITIS dari margin, stock WASPADA -->
+                <article
+                  class="hide-on-all-safe rounded-md border-l-[3px] border-l-critical bg-surface p-3 shadow-card"
+                >
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1 rounded-sm bg-critical-subtle px-2 py-1 text-badge uppercase text-critical">
+                      <svg class="size-3" aria-hidden="true"><use href="#i-circle-alert" /></svg>Kritis
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-sm bg-warning-subtle px-2 py-1 text-badge uppercase text-warning">
+                      <svg class="size-3" aria-hidden="true"><use href="#i-triangle-alert" /></svg>Stock Waspada
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-sm bg-critical-subtle px-2 py-1 text-badge uppercase text-critical">
+                      <svg class="size-3" aria-hidden="true"><use href="#i-circle-alert" /></svg>Margin Kritis
+                    </span>
+                  </div>
+                  <h4 class="mt-2 text-heading text-primary">Hair Vitamin Ampoule (Box 6pcs)</h4>
+                  <p class="mt-1 text-caption text-secondary">HC-005 · LUMORA</p>
+                  <div class="mt-3 grid grid-cols-2 gap-3 border-t border-subtle pt-3">
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-clock" /></svg>Habis dalam</span>
+                      <span class="text-body-strong text-warning">12.0 jam</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-wallet" /></svg>Under COGS</span>
+                      <span class="text-body-strong text-critical">-Rp23.600</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-package" /></svg>Sisa stock gudang</span>
+                      <span class="text-body-strong text-primary">15 unit</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-gauge" /></svg>Runrate</span>
+                      <span class="text-body-strong text-primary">1,3 unit/jam</span>
+                    </div>
+                  </div>
+                  <p class="mt-3 text-body text-secondary">
+                    Sedang dijual di bawah COGS. Cek voucher/diskon yang aktif — kemungkinan voucher
+                    stack error. Pertimbangkan delist sementara atau turunkan alokasi voucher.
+                  </p>
+                </article>
+
+                <!-- #3 MU-003 — KRITIS dari margin, stock AMAN -->
+                <article
+                  class="hide-on-all-safe rounded-md border-l-[3px] border-l-critical bg-surface p-3 shadow-card"
+                >
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1 rounded-sm bg-critical-subtle px-2 py-1 text-badge uppercase text-critical">
+                      <svg class="size-3" aria-hidden="true"><use href="#i-circle-alert" /></svg>Kritis
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-sm bg-critical-subtle px-2 py-1 text-badge uppercase text-critical">
+                      <svg class="size-3" aria-hidden="true"><use href="#i-circle-alert" /></svg>Margin Kritis
+                    </span>
+                  </div>
+                  <h4 class="mt-2 text-heading text-primary">Cushion Foundation SPF35</h4>
+                  <p class="mt-1 text-caption text-secondary">MU-003 · LUMORA</p>
+                  <div class="mt-3 grid grid-cols-2 gap-3 border-t border-subtle pt-3">
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-clock" /></svg>Habis dalam</span>
+                      <span class="text-body-strong text-safe">54.5 jam</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-wallet" /></svg>Under COGS</span>
+                      <span class="text-body-strong text-critical">-Rp49.600</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-package" /></svg>Sisa stock gudang</span>
+                      <span class="text-body-strong text-primary">109 unit</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-gauge" /></svg>Runrate</span>
+                      <span class="text-body-strong text-primary">2 unit/jam</span>
+                    </div>
+                  </div>
+                  <p class="mt-3 text-body text-secondary">
+                    Sedang dijual di bawah COGS. Cek voucher/diskon yang aktif — kemungkinan voucher
+                    stack error. Pertimbangkan delist sementara atau turunkan alokasi voucher.
+                  </p>
+                </article>
+
+                <!-- #4 SK-007 — WASPADA (6,2 jam, tipis di atas threshold 6 jam) -->
+                <article
+                  class="hide-on-all-safe rounded-md border-l-[3px] border-l-warning bg-surface p-3 shadow-card"
+                >
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1 rounded-sm bg-warning-subtle px-2 py-1 text-badge uppercase text-warning">
+                      <svg class="size-3" aria-hidden="true"><use href="#i-triangle-alert" /></svg>Waspada
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-sm bg-warning-subtle px-2 py-1 text-badge uppercase text-warning">
+                      <svg class="size-3" aria-hidden="true"><use href="#i-triangle-alert" /></svg>Stock Waspada
+                    </span>
+                  </div>
+                  <h4 class="mt-2 text-heading text-primary">Eye Cream Anti Aging 15ml</h4>
+                  <p class="mt-1 text-caption text-secondary">SK-007 · LUMORA</p>
+                  <div class="mt-3 grid grid-cols-2 gap-3 border-t border-subtle pt-3">
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-clock" /></svg>Habis dalam</span>
+                      <span class="text-body-strong text-warning">6.2 jam</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-wallet" /></svg>Under COGS</span>
+                      <span class="text-body-strong text-safe">Rp473.000</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-package" /></svg>Sisa stock gudang</span>
+                      <span class="text-body-strong text-primary">14 unit</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-gauge" /></svg>Runrate</span>
+                      <span class="text-body-strong text-primary">2,3 unit/jam</span>
+                    </div>
+                  </div>
+                  <p class="mt-3 text-body text-secondary">
+                    Stock mendekati batas aman (6–24 jam ke depan). Pantau, siapkan replenish jika
+                    tren penjualan berlanjut.
+                  </p>
+                </article>
+
+                <!-- #5 SK-001 — AMAN -->
+                <article class="rounded-md border-l-[3px] border-l-safe bg-surface p-3 shadow-card">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1 rounded-sm bg-safe-subtle px-2 py-1 text-badge uppercase text-safe">
+                      <svg class="size-3" aria-hidden="true"><use href="#i-shield-check" /></svg>Aman
+                    </span>
+                  </div>
+                  <h4 class="mt-2 text-heading text-primary">Facial Wash Gentle Foam 100ml</h4>
+                  <p class="mt-1 text-caption text-secondary">SK-001 · LUMORA</p>
+                  <div class="mt-3 grid grid-cols-2 gap-3 border-t border-subtle pt-3">
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-clock" /></svg>Habis dalam</span>
+                      <span class="text-body-strong text-safe">50.0 jam</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-wallet" /></svg>Under COGS</span>
+                      <span class="text-body-strong text-safe">Rp278.000</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-package" /></svg>Sisa stock gudang</span>
+                      <span class="text-body-strong text-primary">225 unit</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-gauge" /></svg>Runrate</span>
+                      <span class="text-body-strong text-primary">4,5 unit/jam</span>
+                    </div>
+                  </div>
+                  <p class="mt-3 text-body text-secondary">
+                    Stock dan margin dalam kondisi sehat. Tidak ada tindakan mendesak.
+                  </p>
+                </article>
+
+                <!-- #6 MU-005 — AMAN, runrate desimal kecil (test case TECH_SPEC #3) -->
+                <article class="rounded-md border-l-[3px] border-l-safe bg-surface p-3 shadow-card">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1 rounded-sm bg-safe-subtle px-2 py-1 text-badge uppercase text-safe">
+                      <svg class="size-3" aria-hidden="true"><use href="#i-shield-check" /></svg>Aman
+                    </span>
+                  </div>
+                  <h4 class="mt-2 text-heading text-primary">Eyebrow Pencil Waterproof</h4>
+                  <p class="mt-1 text-caption text-secondary">MU-005 · LUMORA</p>
+                  <div class="mt-3 grid grid-cols-2 gap-3 border-t border-subtle pt-3">
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-clock" /></svg>Habis dalam</span>
+                      <span class="text-body-strong text-safe">390.0 jam</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-wallet" /></svg>Under COGS</span>
+                      <span class="text-body-strong text-safe">Rp40.200</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-package" /></svg>Sisa stock gudang</span>
+                      <span class="text-body-strong text-primary">195 unit</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-gauge" /></svg>Runrate</span>
+                      <span class="text-body-strong text-primary">0,5 unit/jam</span>
+                    </div>
+                  </div>
+                  <p class="mt-3 text-body text-secondary">
+                    Stock dan margin dalam kondisi sehat. Tidak ada tindakan mendesak.
+                  </p>
+                </article>
+
+                <!-- #7 BC-999 — AMAN, runrate 0. Edge case learnings.md #1:
+                     kolom "Habis dalam" menampilkan teks, BUKAN "Infinity jam". -->
+                <article class="rounded-md border-l-[3px] border-l-safe bg-surface p-3 shadow-card">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1 rounded-sm bg-safe-subtle px-2 py-1 text-badge uppercase text-safe">
+                      <svg class="size-3" aria-hidden="true"><use href="#i-shield-check" /></svg>Aman
+                    </span>
+                  </div>
+                  <h4 class="mt-2 text-heading text-primary">Contoh SKU Baru Tanpa Histori Penjualan</h4>
+                  <p class="mt-1 text-caption text-secondary">BC-999 · LUMORA</p>
+                  <div class="mt-3 grid grid-cols-2 gap-3 border-t border-subtle pt-3">
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-clock" /></svg>Habis dalam</span>
+                      <span class="text-body-strong text-safe">Stock aman</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-wallet" /></svg>Under COGS</span>
+                      <span class="text-body-strong text-safe">Rp0</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-package" /></svg>Sisa stock gudang</span>
+                      <span class="text-body-strong text-primary">50 unit</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <span class="flex items-center gap-1 text-caption text-secondary"><svg class="size-3" aria-hidden="true"><use href="#i-gauge" /></svg>Runrate</span>
+                      <span class="text-body-strong text-primary">0 unit/jam</span>
+                    </div>
+                  </div>
+                  <p class="mt-3 text-body text-secondary">
+                    Stock dan margin dalam kondisi sehat. Tidak ada tindakan mendesak.
+                  </p>
+                </article>
+              </div>
+
+              <p class="mt-6 text-caption text-disabled">
+                Sumber data: sample_data.json (static, tanpa API live). Action Radar hanya
+                merekomendasikan — eksekusi delist/replenish tetap manual di seller center.
+              </p>
+            </section>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================
+           STATE 4 — TOAST (PRODUCT_SPEC 4.4 / design.md 5.4)
+           position: fixed ke bawah viewport — sama seperti di app, supaya
+           tetap terlihat berapa pun panjang list yang sedang di-scroll
+           (thumb zone). Lebarnya dibatasi selebar device frame.
+           ============================================================ -->
+      <div
+        class="view on-toast fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 p-4"
+      >
+            <div
+              role="status"
+              class="animate-toast-in mx-auto w-full max-w-[92%] rounded-lg border-l-[3px] border-l-critical bg-surface-raised p-4 shadow-toast"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="text-badge uppercase text-critical">Baru jadi kritis</p>
+                  <p class="mt-1 truncate text-body-strong text-primary">Eau de Parfum 50ml</p>
+                  <p class="mt-1 text-caption text-secondary">
+                    Stock tercatat -3 unit (oversell) — cek sinkronisasi gudang.
+                  </p>
+                </div>
+                <label
+                  for="s-ready"
+                  aria-label="Tutup notifikasi"
+                  class="tap-target -mr-2 -mt-2 flex shrink-0 cursor-pointer items-center justify-center rounded-md p-2 text-secondary transition-colors duration-[120ms] ease-out hover:text-primary"
+                ><svg class="size-5" aria-hidden="true"><use href="#i-x" /></svg></label>
+              </div>
+              <label
+                for="s-ready"
+                class="tap-target mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-subtle px-5 py-3 text-body-strong text-primary transition-colors duration-[120ms] ease-out hover:bg-surface"
+              >
+                Lihat FR-002
+                <svg class="size-5" aria-hidden="true"><use href="#i-arrow-right" /></svg>
+              </label>
+        </div>
+      </div>
+
+      <!-- ==================== PANDUAN TESTING ==================== -->
+      <details class="mt-8 rounded-md border border-subtle bg-surface p-4">
+        <summary class="cursor-pointer text-heading text-primary">
+          Panduan Sesi Testing
+        </summary>
+
+        <div class="mt-4 flex flex-col gap-6">
+          <div>
+            <h3 class="text-body-strong text-primary">Target yang diuji</h3>
+            <p class="mt-1 text-body text-secondary">
+              Waktu dari layar terbuka sampai tester tahu apa yang harus dikerjakan:
+              <span class="text-body-strong text-primary">di bawah 30 detik, tanpa dijelaskan</span>.
+              Baseline yang digantikan: 45 menit cross-check CSV manual.
+            </p>
+          </div>
+
+          <div>
+            <h3 class="text-body-strong text-primary">Checklist Acceptance Criteria</h3>
+            <p class="mt-1 text-caption text-secondary">
+              PRODUCT_SPEC.md Section 5. Buka di state 3, jangan beri penjelasan apa pun dulu.
+            </p>
+            <ul class="mt-3 flex flex-col gap-3">
+              <li class="flex items-start gap-3">
+                <input type="checkbox" id="ac1" class="mt-1 size-4 shrink-0 accent-accent" />
+                <label for="ac1" class="text-body text-secondary">
+                  Menunjuk SKU paling mendesak tanpa dibantu.
+                  <span class="text-caption text-disabled">Ekspektasi: FR-002 di posisi teratas.</span>
+                </label>
+              </li>
+              <li class="flex items-start gap-3">
+                <input type="checkbox" id="ac2" class="mt-1 size-4 shrink-0 accent-accent" />
+                <label for="ac2" class="text-body text-secondary">
+                  Menjelaskan <em>alasan</em> SKU itu kritis tanpa membuka data mentah.
+                  <span class="text-caption text-disabled">Sumbernya harus teks rekomendasi, bukan angka mentah.</span>
+                </label>
+              </li>
+              <li class="flex items-start gap-3">
+                <input type="checkbox" id="ac3" class="mt-1 size-4 shrink-0 accent-accent" />
+                <label for="ac3" class="text-body text-secondary">
+                  Menyebut kondisi Budget Safe campaign dari satu indikator di atas layar.
+                  <span class="text-caption text-disabled">Bandingkan state 3 vs 5 vs 6.</span>
+                </label>
+              </li>
+              <li class="flex items-start gap-3">
+                <input type="checkbox" id="ac4" class="mt-1 size-4 shrink-0 accent-accent" />
+                <label for="ac4" class="text-body text-secondary">
+                  Menentukan langkah berikutnya (delist / replenish / turunkan voucher).
+                </label>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-body-strong text-primary">Titik yang perlu diperhatikan saat observasi</h3>
+            <ul class="mt-2 flex list-disc flex-col gap-2 pl-5 text-body text-secondary">
+              <li>
+                <span class="text-body-strong text-primary">FR-002 di posisi #1 padahal marginnya positif.</span>
+                Apakah tester paham kenapa oversell lebih mendesak daripada SKU yang sedang rugi?
+              </li>
+              <li>
+                <span class="text-body-strong text-primary">MU-003 badge merah tapi stock 109 unit / 54,5 jam.</span>
+                Apakah badge merah untuk alasan margin terbaca jelas, atau malah dikira salah baca stock?
+              </li>
+              <li>
+                <span class="text-body-strong text-primary">SK-007 di 6,2 jam = kuning, bukan merah.</span>
+                Threshold 6 jam belum divalidasi ke user riil (PRODUCT_SPEC Section 7 #3).
+                Tanya: 6,2 jam itu rasanya mendesak atau masih santai?
+              </li>
+              <li>
+                <span class="text-body-strong text-primary">BC-999 menampilkan "Stock aman", bukan angka jam.</span>
+                Cek apakah ini kebaca wajar atau justru terasa seperti data hilang.
+              </li>
+              <li>
+                <span class="text-body-strong text-primary">State 6 (Budget Kritis).</span>
+                Badge campaign merah sementara list SKU tidak berubah. Apakah tester sadar itu dua level
+                informasi yang berbeda?
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-body-strong text-primary">Yang belum ada di prototype ini (jangan diuji)</h3>
+            <ul class="mt-2 flex list-disc flex-col gap-2 pl-5 text-body text-secondary">
+              <li>Eksekusi apa pun ke seller center — tidak ada tombol delist/replenish yang benar-benar bekerja.</li>
+              <li>Auto-dismiss toast 6 detik, scroll-to-SKU, dan animasi transisi status (ada di versi React).</li>
+              <li>Multi-brand switcher, login, dan integrasi API live (PRODUCT_SPEC Section 6).</li>
+            </ul>
+          </div>
+
+          <div class="border-t border-subtle pt-4">
+            <p class="text-caption text-disabled">
+              Versi interaktif (input budget yang benar-benar menghitung, loading transisi,
+              toast auto-dismiss) ada di app React: <code>npm run dev</code>.
+              Prototype static ini untuk review visual cepat dan sesi testing tanpa setup.
+            </p>
+          </div>
+        </div>
+      </details>
+    </div>
+  </body>
+</html>

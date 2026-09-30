@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/*
+  ============================================================================
+  Design tokens — mirror langsung dari design.md (Anti-UI Drift Tokens).
+  ATURAN: jangan pakai nilai hex/size/radius yang tidak ada di sini.
+  Kalau butuh nilai baru, tambahkan dulu ke design.md, baru ke file ini.
+  ============================================================================
+*/
+@theme {
+  /* --- 1.1 Base / Neutral (Dark Mode) ------------------------------------ */
+  --color-base: #0b0f14;
+  --color-surface: #141a21;
+  --color-surface-raised: #1c242d;
+  --color-subtle: #2a333d; /* border-subtle */
+  --color-primary: #f5f7fa; /* text-primary */
+  --color-secondary: #9aa5b1; /* text-secondary */
+  --color-disabled: #5a6472; /* text-disabled */
+
+  /* --- 1.2 Urgency / Status --------------------------------------------- */
+  --color-critical: #e5484d;
+  --color-critical-on: #ffffff;
+  --color-critical-subtle: #3a1618;
+
+  --color-warning: #f5a623;
+  --color-warning-on: #1a1400;
+  --color-warning-subtle: #3a2a0a;
+
+  --color-safe: #2ecc71;
+  --color-safe-on: #062012;
+  --color-safe-subtle: #122a1c;
+
+  --color-info: #4a9eff;
+  --color-info-on: #ffffff;
+  --color-info-subtle: #122436;
+
+  /* --- 1.3 Brand Accent ------------------------------------------------- */
+  --color-accent: #6c63ff;
+  --color-accent-hover: #8079ff;
+
+  /* --- 2. Typography ---------------------------------------------------- */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --text-display: 24px;
+  --text-display--line-height: 1.3;
+  --text-display--font-weight: 700;
+
+  --text-heading: 18px;
+  --text-heading--line-height: 1.4;
+  --text-heading--font-weight: 600;
+
+  --text-body: 14px;
+  --text-body--line-height: 1.5;
+  --text-body--font-weight: 400;
+
+  --text-body-strong: 14px;
+  --text-body-strong--line-height: 1.5;
+  --text-body-strong--font-weight: 600;
+
+  --text-caption: 12px;
+  --text-caption--line-height: 1.4;
+  --text-caption--font-weight: 400;
+
+  --text-badge: 11px;
+  --text-badge--line-height: 1;
+  --text-badge--font-weight: 700;
+  --text-badge--letter-spacing: 0.03em;
+
+  /* --- 4. Border Radius & Shadow ---------------------------------------- */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.24);
+  --shadow-toast: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  /* --- 7. Motion -------------------------------------------------------- */
+  --animate-skeleton: skeleton-pulse 1.5s ease-in-out infinite;
+  --animate-toast-in: toast-in 200ms ease-out;
+
+  @keyframes skeleton-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-base text-primary font-sans antialiased;
+  }
+
+  /* Focus ring global: accent-primary 2px (design.md 1.3 + 5.7) */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Motion accessibility: matikan animasi dekoratif kalau user minta */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility tap-target {
+  /* design.md 5.3 — semua tombol/ikon minimal 44x44px */
+  min-height: 44px;
+  min-width: 44px;
+}

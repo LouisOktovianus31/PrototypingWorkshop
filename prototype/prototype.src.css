@@ -1,0 +1,82 @@
+/*
+  Input CSS untuk static prototype.
+  Token visual TIDAK didefinisikan ulang di sini — di-import dari ../src/index.css
+  supaya prototype static dan app React memakai sumber token yang sama (design.md).
+
+  Build: npm run build:prototype  →  prototype/prototype.css
+*/
+
+@import "../src/index.css";
+@source "./index.html";
+
+/*
+  State switching tanpa JavaScript.
+  Setiap "view" disembunyikan default, lalu ditampilkan berdasarkan radio mana
+  yang sedang dicentang di switcher. Pakai :has() — tidak ada script sama sekali,
+  jadi file ini tetap bisa dibuka langsung lewat double-click (file://).
+*/
+@layer components {
+  .view {
+    display: none;
+  }
+
+  body:has(#s-empty:checked) .on-empty,
+  body:has(#s-loading:checked) .on-loading,
+  body:has(#s-ready:checked) .on-ready,
+  body:has(#s-toast:checked) .on-toast,
+  body:has(#s-budget-waspada:checked) .on-budget-waspada,
+  body:has(#s-budget-kritis:checked) .on-budget-kritis,
+  body:has(#s-all-safe:checked) .on-all-safe {
+    display: block;
+  }
+
+  /* "Semua AMAN" = list yang sama, empat card non-AMAN teratas disembunyikan.
+     Menghindari duplikasi markup card di dua tempat (sumber drift). */
+  body:has(#s-all-safe:checked) .hide-on-all-safe {
+    display: none;
+  }
+
+  /* Jumlah SKU di header list ikut menyesuaikan state. */
+  .count-full,
+  .count-safe {
+    display: none;
+  }
+  body:not(:has(#s-all-safe:checked)) .count-full,
+  body:has(#s-all-safe:checked) .count-safe {
+    display: inline;
+  }
+
+  /*
+    Chip switcher aktif.
+    Tidak bisa pakai variant `peer-checked:` karena radio-nya bukan sibling dari
+    label (label ada di dalam <nav>, radio di root <body>), jadi dipasangkan
+    manual lewat :has() + attribute selector.
+  */
+  body:has(#s-empty:checked) .state-chip[for="s-empty"],
+  body:has(#s-loading:checked) .state-chip[for="s-loading"],
+  body:has(#s-ready:checked) .state-chip[for="s-ready"],
+  body:has(#s-toast:checked) .state-chip[for="s-toast"],
+  body:has(#s-budget-waspada:checked) .state-chip[for="s-budget-waspada"],
+  body:has(#s-budget-kritis:checked) .state-chip[for="s-budget-kritis"],
+  body:has(#s-all-safe:checked) .state-chip[for="s-all-safe"] {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent);
+    color: #ffffff;
+  }
+
+  /*
+    Radio-nya visually hidden, jadi focus ring bawaan tidak kelihatan.
+    Ring dipindahkan ke chip yang bersangkutan supaya navigasi keyboard
+    (Tab ke grup radio, panah kiri/kanan untuk pindah state) tetap terlihat.
+  */
+  #s-empty:focus-visible ~ * .state-chip[for="s-empty"],
+  #s-loading:focus-visible ~ * .state-chip[for="s-loading"],
+  #s-ready:focus-visible ~ * .state-chip[for="s-ready"],
+  #s-toast:focus-visible ~ * .state-chip[for="s-toast"],
+  #s-budget-waspada:focus-visible ~ * .state-chip[for="s-budget-waspada"],
+  #s-budget-kritis:focus-visible ~ * .state-chip[for="s-budget-kritis"],
+  #s-all-safe:focus-visible ~ * .state-chip[for="s-all-safe"] {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}

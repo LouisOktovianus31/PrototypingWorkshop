@@ -1,0 +1,110 @@
+{
+  "campaign": {
+    "id": "camp-1010-2026",
+    "name": "Double-Day Mega Campaign 10.10",
+    "startDate": "2026-10-10T00:00:00+07:00",
+    "endDate": "2026-10-10T23:59:59+07:00",
+    "budgetCampaign": 15000000,
+    "campaignElapsedHours": 4
+  },
+  "skus": [
+    {
+      "sku": "SK-001",
+      "namaProduk": "Facial Wash Gentle Foam 100ml",
+      "brand": "LUMORA",
+      "subKategori": "Skincare",
+      "cogsPerUnit": 16000,
+      "stockGudang": [
+        { "lokasi": "Gudang Jakarta", "sisaStock": 225 }
+      ],
+      "qtyTerjualCampaignBerjalan": 18,
+      "revenueNetCampaignBerjalan": 566000,
+      "cogsCampaignBerjalan": 288000,
+      "note": "Kondisi normal — lonjakan order wajar, stock masih jauh dari kritis, margin sehat."
+    },
+    {
+      "sku": "SK-007",
+      "namaProduk": "Eye Cream Anti Aging 15ml",
+      "brand": "LUMORA",
+      "subKategori": "Skincare",
+      "cogsPerUnit": 38000,
+      "stockGudang": [
+        { "lokasi": "Gudang Bandung", "sisaStock": 14 }
+      ],
+      "qtyTerjualCampaignBerjalan": 9,
+      "revenueNetCampaignBerjalan": 815000,
+      "cogsCampaignBerjalan": 342000,
+      "note": "LOW STOCK di data asli (14 unit). 9 unit terjual dalam 4 jam campaign -> runrate tinggi, stock diproyeksikan habis dalam hitungan jam. Kandidat KRITIS dari sisi stock, margin masih sehat."
+    },
+    {
+      "sku": "HC-005",
+      "namaProduk": "Hair Vitamin Ampoule (Box 6pcs)",
+      "brand": "LUMORA",
+      "subKategori": "Haircare",
+      "cogsPerUnit": 26000,
+      "stockGudang": [
+        { "lokasi": "Gudang Bandung", "sisaStock": 15 }
+      ],
+      "qtyTerjualCampaignBerjalan": 5,
+      "revenueNetCampaignBerjalan": 106400,
+      "cogsCampaignBerjalan": 130000,
+      "note": "LOW STOCK (15 unit) DAN revenue net di bawah COGS pada campaign berjalan (voucher agresif) -> kandidat KRITIS ganda (stock + margin), harus muncul di posisi teratas list."
+    },
+    {
+      "sku": "MU-003",
+      "namaProduk": "Cushion Foundation SPF35",
+      "brand": "LUMORA",
+      "subKategori": "Makeup",
+      "cogsPerUnit": 45000,
+      "stockGudang": [
+        { "lokasi": "Gudang Bandung", "sisaStock": 109 }
+      ],
+      "qtyTerjualCampaignBerjalan": 8,
+      "revenueNetCampaignBerjalan": 310400,
+      "cogsCampaignBerjalan": 360000,
+      "note": "Revenue net campaign berjalan di bawah COGS (harga jual net rata-rata Rp38.800/unit vs COGS Rp45.000/unit) -> representasi langsung dari 'voucher stack error sell below COGS' pada raw problem statement Fiona. Stock masih aman."
+    },
+    {
+      "sku": "FR-002",
+      "namaProduk": "Eau de Parfum 50ml",
+      "brand": "LUMORA",
+      "subKategori": "Fragrance",
+      "cogsPerUnit": 85000,
+      "stockGudang": [
+        { "lokasi": "Gudang Bandung", "sisaStock": -3 }
+      ],
+      "qtyTerjualCampaignBerjalan": 12,
+      "revenueNetCampaignBerjalan": 2568000,
+      "cogsCampaignBerjalan": 1020000,
+      "note": "EDGE CASE UTAMA: sisaStock NEGATIF (oversold — total terjual melebihi stock awal). Representasi langsung dari keluhan Fiona 'hero SKU show out-of-stock while warehouse has units left'. Harus KRITIS mutlak dari sisi stock, terlepas dari margin yang sehat."
+    },
+    {
+      "sku": "MU-005",
+      "namaProduk": "Eyebrow Pencil Waterproof",
+      "brand": "LUMORA",
+      "subKategori": "Makeup",
+      "cogsPerUnit": 10000,
+      "stockGudang": [
+        { "lokasi": "Gudang Jakarta", "sisaStock": 195 }
+      ],
+      "qtyTerjualCampaignBerjalan": 2,
+      "revenueNetCampaignBerjalan": 60200,
+      "cogsCampaignBerjalan": 20000,
+      "note": "Qty terjual sangat rendah dalam campaign berjalan (2 unit/4 jam). Runrate kecil tapi tetap > 0 -> test case angka desimal kecil, bukan edge case null."
+    },
+    {
+      "sku": "BC-999",
+      "namaProduk": "Contoh SKU Baru Tanpa Histori Penjualan",
+      "brand": "LUMORA",
+      "subKategori": "Bodycare",
+      "cogsPerUnit": 20000,
+      "stockGudang": [
+        { "lokasi": "Gudang Jakarta", "sisaStock": 50 }
+      ],
+      "qtyTerjualCampaignBerjalan": 0,
+      "revenueNetCampaignBerjalan": 0,
+      "cogsCampaignBerjalan": 0,
+      "note": "EDGE CASE: qty terjual 0 sepanjang campaign berjalan. Runrate = 0, wajib ditangani sebagai kasus zero-division (lihat learnings.md #1), bukan crash atau tampil error/Infinity."
+    }
+  ]
+}

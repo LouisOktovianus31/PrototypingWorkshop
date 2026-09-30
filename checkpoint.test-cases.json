@@ -1,0 +1,935 @@
+{
+  "meta": {
+    "name": "Action Radar — TDD Checkpoint",
+    "derivedFrom": "TECH_SPEC.md",
+    "version": "1.0.0",
+    "purpose": "Daftar test case yang HARUS lulus sebelum implementasi dianggap selesai. Ditulis sebelum kode (TDD). Setiap case mengacu eksplisit ke section di TECH_SPEC.md sebagai sumber kebenaran.",
+    "conventions": {
+      "tolerance": "Untuk expected bertipe float, bandingkan dengan toleransi 1e-9 kecuali field 'tolerance' pada case menyatakan lain.",
+      "nullSemantics": "jamSampaiHabis bernilai null berarti runway tak terbatas (runrate 0). null BUKAN error, BUKAN Infinity literal, BUKAN NaN.",
+      "forbiddenOutputs": "Tidak ada fungsi yang boleh mengembalikan NaN atau Infinity. Case bertanda 'assertNotNaNOrInfinity: true' wajib memverifikasi ini secara eksplisit."
+    },
+    "thresholdsUnderTest": {
+      "STOCK_CRITICAL_HOURS": 6,
+      "STOCK_WARNING_HOURS": 24,
+      "MARGIN_WARNING_RATIO": 0.1,
+      "BUDGET_CRITICAL_RATIO": 0.1,
+      "BUDGET_WARNING_RATIO": 0.3
+    },
+    "totalCases": 68,
+    "coverageByFunction": {
+      "calculateRunratePerJam": 6,
+      "calculateJamSampaiHabis": 7,
+      "getStockStatus": 8,
+      "getMarginStatus": 8,
+      "getOverallStatus": 6,
+      "calculateBudgetSafe": 10,
+      "sortByPriority": 8,
+      "generateRecommendation": 8,
+      "buildActionRadarViewModel": 7
+    },
+    "coverageByCategory": {
+      "happy-path": 27,
+      "boundary": 11,
+      "zero-division": 7,
+      "edge-case": 18,
+      "integration": 3,
+      "architecture": 1,
+      "invariant": 1
+    },
+    "regressionCoverage": {
+      "note": "Case bertanda field 'regressionFor' memetakan langsung ke insiden yang tercatat di learnings.md. Semua insiden di learnings.md wajib punya minimal satu test case.",
+      "learnings.md #1 (zero-division runrate 0)": ["TC-JH-03", "TC-SS-06", "TC-SORT-04", "TC-REC-08", "TC-INT-05"],
+      "learnings.md #2 (oversell/stock negatif)": ["TC-JH-04", "TC-SS-07", "TC-REC-01"],
+      "learnings.md #3 (akumulasi Under COGS salah arah)": ["TC-BS-01", "TC-INT-03"],
+      "learnings.md #4 (budgetCampaign 0 → div by zero)": ["TC-BS-08", "TC-VM-02", "TC-INT-05"],
+      "learnings.md #5 (margin ratio pembagi 0)": ["TC-MS-06", "TC-MS-07", "TC-INT-05"]
+    }
+  },
+  "testCases": [
+    {
+      "id": "TC-RR-01",
+      "function": "calculateRunratePerJam",
+      "specRef": "TECH_SPEC.md §3.1",
+      "category": "happy-path",
+      "priority": "high",
+      "description": "Runrate normal: 18 unit terjual dalam 4 jam campaign berjalan",
+      "input": { "qtyTerjualCampaignBerjalan": 18, "campaignElapsedHours": 4 },
+      "expected": 4.5
+    },
+    {
+      "id": "TC-RR-02",
+      "function": "calculateRunratePerJam",
+      "specRef": "TECH_SPEC.md §3.1",
+      "category": "happy-path",
+      "priority": "medium",
+      "description": "Runrate dengan hasil desimal kecil: 2 unit dalam 4 jam",
+      "input": { "qtyTerjualCampaignBerjalan": 2, "campaignElapsedHours": 4 },
+      "expected": 0.5
+    },
+    {
+      "id": "TC-RR-03",
+      "function": "calculateRunratePerJam",
+      "specRef": "TECH_SPEC.md §3.1",
+      "category": "edge-case",
+      "priority": "high",
+      "description": "Qty 0 (belum ada penjualan) menghasilkan runrate 0, bukan error",
+      "input": { "qtyTerjualCampaignBerjalan": 0, "campaignElapsedHours": 4 },
+      "expected": 0,
+      "assertNotNaNOrInfinity": true
+    },
+    {
+      "id": "TC-RR-04",
+      "function": "calculateRunratePerJam",
+      "specRef": "TECH_SPEC.md §3.1 (guard) + learnings.md §2",
+      "category": "zero-division",
+      "priority": "critical",
+      "description": "ZERO-DIVISION GUARD: campaignElapsedHours = 0 (campaign belum mulai) harus return 0, TIDAK boleh divide by zero",
+      "input": { "qtyTerjualCampaignBerjalan": 18, "campaignElapsedHours": 0 },
+      "expected": 0,
+      "assertNotNaNOrInfinity": true
+    },
+    {
+      "id": "TC-RR-05",
+      "function": "calculateRunratePerJam",
+      "specRef": "TECH_SPEC.md §3.1 (guard)",
+      "category": "zero-division",
+      "priority": "critical",
+      "description": "ZERO-DIVISION GUARD: campaignElapsedHours negatif (data rusak) harus return 0",
+      "input": { "qtyTerjualCampaignBerjalan": 18, "campaignElapsedHours": -4 },
+      "expected": 0,
+      "assertNotNaNOrInfinity": true
+    },
+    {
+      "id": "TC-RR-06",
+      "function": "calculateRunratePerJam",
+      "specRef": "TECH_SPEC.md §3.1 + §4 case 5",
+      "category": "zero-division",
+      "priority": "critical",
+      "description": "ZERO-DIVISION GUARD: qty 0 DAN elapsed 0 sekaligus (0/0) harus return 0, bukan NaN",
+      "input": { "qtyTerjualCampaignBerjalan": 0, "campaignElapsedHours": 0 },
+      "expected": 0,
+      "assertNotNaNOrInfinity": true
+    },
+
+    {
+      "id": "TC-JH-01",
+      "function": "calculateJamSampaiHabis",
+      "specRef": "TECH_SPEC.md §3.2",
+      "category": "happy-path",
+      "priority": "high",
+      "description": "Runway normal: 225 unit dengan runrate 4.5 unit/jam = 50 jam",
+      "input": { "totalSisaStock": 225, "runratePerJam": 4.5 },
+      "expected": 50
+    },
+    {
+      "id": "TC-JH-02",
+      "function": "calculateJamSampaiHabis",
+      "specRef": "TECH_SPEC.md §3.2",
+      "category": "happy-path",
+      "priority": "medium",
+      "description": "Runway dengan hasil pecahan berulang: 14 unit / 2.25 = 6.2222...",
+      "input": { "totalSisaStock": 14, "runratePerJam": 2.25 },
+      "expected": 6.222222222222222,
+      "tolerance": 1e-9
+    },
+    {
+      "id": "TC-JH-03",
+      "function": "calculateJamSampaiHabis",
+      "specRef": "TECH_SPEC.md §3.2 (edge case 2) + learnings.md #1",
+      "category": "zero-division",
+      "priority": "critical",
+      "description": "ZERO-DIVISION GUARD: runrate 0 harus return null (runway tak terbatas), BUKAN Infinity dan BUKAN NaN",
+      "input": { "totalSisaStock": 50, "runratePerJam": 0 },
+      "expected": null,
+      "assertNotNaNOrInfinity": true,
+      "regressionFor": "learnings.md #1"
+    },
+    {
+      "id": "TC-JH-04",
+      "function": "calculateJamSampaiHabis",
+      "specRef": "TECH_SPEC.md §3.2 (edge case 1) + learnings.md #2",
+      "category": "edge-case",
+      "priority": "critical",
+      "description": "OVERSELL: stock negatif harus return 0 (bukan angka negatif hasil pembagian)",
+      "input": { "totalSisaStock": -3, "runratePerJam": 3 },
+      "expected": 0,
+      "regressionFor": "learnings.md #2"
+    },
+    {
+      "id": "TC-JH-05",
+      "function": "calculateJamSampaiHabis",
+      "specRef": "TECH_SPEC.md §3.2 (edge case 1)",
+      "category": "edge-case",
+      "priority": "high",
+      "description": "Stock tepat 0 (habis persis) harus return 0",
+      "input": { "totalSisaStock": 0, "runratePerJam": 3 },
+      "expected": 0
+    },
+    {
+      "id": "TC-JH-06",
+      "function": "calculateJamSampaiHabis",
+      "specRef": "TECH_SPEC.md §3.2",
+      "category": "edge-case",
+      "priority": "high",
+      "description": "PRESEDENSI GUARD: stock negatif DAN runrate 0 sekaligus — guard stock harus dievaluasi lebih dulu, hasil 0 (bukan null)",
+      "input": { "totalSisaStock": -3, "runratePerJam": 0 },
+      "expected": 0,
+      "note": "Menguji urutan guard di §3.2: cek totalSisaStock <= 0 mendahului cek runratePerJam <= 0."
+    },
+    {
+      "id": "TC-JH-07",
+      "function": "calculateJamSampaiHabis",
+      "specRef": "TECH_SPEC.md §3.2",
+      "category": "edge-case",
+      "priority": "medium",
+      "description": "Runrate negatif (data rusak) diperlakukan sama seperti runrate 0 → null",
+      "input": { "totalSisaStock": 50, "runratePerJam": -1 },
+      "expected": null,
+      "assertNotNaNOrInfinity": true
+    },
+
+    {
+      "id": "TC-SS-01",
+      "function": "getStockStatus",
+      "specRef": "TECH_SPEC.md §3.3",
+      "category": "happy-path",
+      "priority": "high",
+      "description": "Runway jauh di atas 24 jam = AMAN",
+      "input": { "jamSampaiHabis": 50, "isOversold": false },
+      "expected": "AMAN"
+    },
+    {
+      "id": "TC-SS-02",
+      "function": "getStockStatus",
+      "specRef": "TECH_SPEC.md §3.3",
+      "category": "boundary",
+      "priority": "critical",
+      "description": "BOUNDARY: runway tepat 6 jam = WASPADA (kondisi kritis adalah < 6, bukan <= 6)",
+      "input": { "jamSampaiHabis": 6, "isOversold": false },
+      "expected": "WASPADA"
+    },
+    {
+      "id": "TC-SS-03",
+      "function": "getStockStatus",
+      "specRef": "TECH_SPEC.md §3.3",
+      "category": "boundary",
+      "priority": "critical",
+      "description": "BOUNDARY: runway tepat di bawah 6 jam (5.99) = KRITIS",
+      "input": { "jamSampaiHabis": 5.99, "isOversold": false },
+      "expected": "KRITIS"
+    },
+    {
+      "id": "TC-SS-04",
+      "function": "getStockStatus",
+      "specRef": "TECH_SPEC.md §3.3",
+      "category": "boundary",
+      "priority": "critical",
+      "description": "BOUNDARY: runway tepat 24 jam = AMAN (waspada adalah < 24, bukan <= 24)",
+      "input": { "jamSampaiHabis": 24, "isOversold": false },
+      "expected": "AMAN"
+    },
+    {
+      "id": "TC-SS-05",
+      "function": "getStockStatus",
+      "specRef": "TECH_SPEC.md §3.3",
+      "category": "boundary",
+      "priority": "high",
+      "description": "BOUNDARY: runway tepat di bawah 24 jam (23.99) = WASPADA",
+      "input": { "jamSampaiHabis": 23.99, "isOversold": false },
+      "expected": "WASPADA"
+    },
+    {
+      "id": "TC-SS-06",
+      "function": "getStockStatus",
+      "specRef": "TECH_SPEC.md §3.3 + learnings.md #1",
+      "category": "edge-case",
+      "priority": "critical",
+      "description": "jamSampaiHabis null (runrate 0) = AMAN, tidak boleh dianggap kritis atau error",
+      "input": { "jamSampaiHabis": null, "isOversold": false },
+      "expected": "AMAN",
+      "regressionFor": "learnings.md #1"
+    },
+    {
+      "id": "TC-SS-07",
+      "function": "getStockStatus",
+      "specRef": "TECH_SPEC.md §3.3 + learnings.md #2",
+      "category": "edge-case",
+      "priority": "critical",
+      "description": "OVERSELL selalu KRITIS tanpa pengecualian, meski jamSampaiHabis 0",
+      "input": { "jamSampaiHabis": 0, "isOversold": true },
+      "expected": "KRITIS",
+      "regressionFor": "learnings.md #2"
+    },
+    {
+      "id": "TC-SS-08",
+      "function": "getStockStatus",
+      "specRef": "TECH_SPEC.md §3.3",
+      "category": "edge-case",
+      "priority": "high",
+      "description": "PRESEDENSI: isOversold true harus menang meski jamSampaiHabis null",
+      "input": { "jamSampaiHabis": null, "isOversold": true },
+      "expected": "KRITIS",
+      "note": "Menguji bahwa cek isOversold mendahului cek null di §3.3."
+    },
+
+    {
+      "id": "TC-MS-01",
+      "function": "getMarginStatus",
+      "specRef": "TECH_SPEC.md §3.4",
+      "category": "happy-path",
+      "priority": "high",
+      "description": "Margin sehat (96.5% dari COGS) = AMAN",
+      "input": { "underCogs": 278000, "cogsPerUnit": 16000, "qty": 18 },
+      "expected": "AMAN"
+    },
+    {
+      "id": "TC-MS-02",
+      "function": "getMarginStatus",
+      "specRef": "TECH_SPEC.md §3.4",
+      "category": "happy-path",
+      "priority": "critical",
+      "description": "Margin negatif (dijual di bawah COGS) = KRITIS, tanpa gradasi",
+      "input": { "underCogs": -23600, "cogsPerUnit": 26000, "qty": 5 },
+      "expected": "KRITIS"
+    },
+    {
+      "id": "TC-MS-03",
+      "function": "getMarginStatus",
+      "specRef": "TECH_SPEC.md §3.4",
+      "category": "boundary",
+      "priority": "critical",
+      "description": "BOUNDARY: margin tepat 10% dari COGS = AMAN (waspada adalah < 0.1, bukan <= 0.1)",
+      "input": { "underCogs": 10000, "cogsPerUnit": 10000, "qty": 10 },
+      "expected": "AMAN"
+    },
+    {
+      "id": "TC-MS-04",
+      "function": "getMarginStatus",
+      "specRef": "TECH_SPEC.md §3.4",
+      "category": "boundary",
+      "priority": "critical",
+      "description": "BOUNDARY: margin tepat di bawah 10% (9999/100000) = WASPADA",
+      "input": { "underCogs": 9999, "cogsPerUnit": 10000, "qty": 10 },
+      "expected": "WASPADA"
+    },
+    {
+      "id": "TC-MS-05",
+      "function": "getMarginStatus",
+      "specRef": "TECH_SPEC.md §3.4",
+      "category": "boundary",
+      "priority": "high",
+      "description": "BOUNDARY: margin tepat 0 (break-even, tidak rugi tapi tidak untung) = WASPADA",
+      "input": { "underCogs": 0, "cogsPerUnit": 10000, "qty": 10 },
+      "expected": "WASPADA",
+      "note": "underCogs 0 tidak memenuhi < 0 (bukan KRITIS), ratio 0 < 0.1 sehingga WASPADA."
+    },
+    {
+      "id": "TC-MS-06",
+      "function": "getMarginStatus",
+      "specRef": "TECH_SPEC.md §3.4 (guard) + learnings.md #5",
+      "category": "zero-division",
+      "priority": "critical",
+      "description": "ZERO-DIVISION GUARD: qty 0 membuat totalCogs 0 — harus return AMAN, bukan NaN",
+      "input": { "underCogs": 0, "cogsPerUnit": 20000, "qty": 0 },
+      "expected": "AMAN",
+      "assertNotNaNOrInfinity": true,
+      "regressionFor": "learnings.md #5"
+    },
+    {
+      "id": "TC-MS-07",
+      "function": "getMarginStatus",
+      "specRef": "TECH_SPEC.md §3.4 (guard) + learnings.md #5",
+      "category": "zero-division",
+      "priority": "critical",
+      "description": "ZERO-DIVISION GUARD: cogsPerUnit 0 (data rusak) membuat totalCogs 0 — harus return AMAN",
+      "input": { "underCogs": 5000, "cogsPerUnit": 0, "qty": 10 },
+      "expected": "AMAN",
+      "assertNotNaNOrInfinity": true,
+      "regressionFor": "learnings.md #5"
+    },
+    {
+      "id": "TC-MS-08",
+      "function": "getMarginStatus",
+      "specRef": "TECH_SPEC.md §3.4",
+      "category": "edge-case",
+      "priority": "high",
+      "description": "PRESEDENSI: underCogs negatif harus KRITIS meski totalCogs 0 (cek rugi mendahului guard pembagi)",
+      "input": { "underCogs": -1000, "cogsPerUnit": 0, "qty": 0 },
+      "expected": "KRITIS",
+      "note": "Menguji urutan di §3.4: cek underCogs < 0 mendahului guard totalCogs <= 0."
+    },
+
+    {
+      "id": "TC-OS-01",
+      "function": "getOverallStatus",
+      "specRef": "TECH_SPEC.md §3.4",
+      "category": "happy-path",
+      "priority": "high",
+      "description": "Kedua status AMAN = AMAN",
+      "input": { "stockStatus": "AMAN", "marginStatus": "AMAN" },
+      "expected": "AMAN"
+    },
+    {
+      "id": "TC-OS-02",
+      "function": "getOverallStatus",
+      "specRef": "TECH_SPEC.md §3.4",
+      "category": "happy-path",
+      "priority": "critical",
+      "description": "Stock AMAN tapi margin KRITIS = KRITIS (status terburuk yang menang)",
+      "input": { "stockStatus": "AMAN", "marginStatus": "KRITIS" },
+      "expected": "KRITIS"
+    },
+    {
+      "id": "TC-OS-03",
+      "function": "getOverallStatus",
+      "specRef": "TECH_SPEC.md §3.4",
+      "category": "happy-path",
+      "priority": "critical",
+      "description": "Stock KRITIS tapi margin AMAN = KRITIS",
+      "input": { "stockStatus": "KRITIS", "marginStatus": "AMAN" },
+      "expected": "KRITIS"
+    },
+    {
+      "id": "TC-OS-04",
+      "function": "getOverallStatus",
+      "specRef": "TECH_SPEC.md §3.4",
+      "category": "happy-path",
+      "priority": "high",
+      "description": "Stock WASPADA dan margin KRITIS = KRITIS",
+      "input": { "stockStatus": "WASPADA", "marginStatus": "KRITIS" },
+      "expected": "KRITIS"
+    },
+    {
+      "id": "TC-OS-05",
+      "function": "getOverallStatus",
+      "specRef": "TECH_SPEC.md §3.4",
+      "category": "happy-path",
+      "priority": "medium",
+      "description": "Stock WASPADA dan margin AMAN = WASPADA",
+      "input": { "stockStatus": "WASPADA", "marginStatus": "AMAN" },
+      "expected": "WASPADA"
+    },
+    {
+      "id": "TC-OS-06",
+      "function": "getOverallStatus",
+      "specRef": "TECH_SPEC.md §3.4",
+      "category": "happy-path",
+      "priority": "medium",
+      "description": "Kedua status KRITIS = KRITIS",
+      "input": { "stockStatus": "KRITIS", "marginStatus": "KRITIS" },
+      "expected": "KRITIS"
+    },
+
+    {
+      "id": "TC-BS-01",
+      "function": "calculateBudgetSafe",
+      "specRef": "TECH_SPEC.md §3.6",
+      "category": "happy-path",
+      "priority": "critical",
+      "description": "Akumulasi HANYA dari SKU yang rugi; SKU untung tidak menutupi kerugian",
+      "input": {
+        "budgetCampaign": 15000000,
+        "skuList": [
+          { "sku": "SK-001", "underCogs": 278000, "isBelowCogs": false },
+          { "sku": "HC-005", "underCogs": -23600, "isBelowCogs": true },
+          { "sku": "MU-003", "underCogs": -49600, "isBelowCogs": true },
+          { "sku": "FR-002", "underCogs": 1548000, "isBelowCogs": false }
+        ]
+      },
+      "expected": {
+        "budgetCampaign": 15000000,
+        "akumulasiUnderCogs": 73200,
+        "budgetSafe": 14926800,
+        "budgetSafePercentage": 0.99512,
+        "budgetStatus": "AMAN"
+      },
+      "tolerance": 1e-9,
+      "regressionFor": "learnings.md #3",
+      "note": "Kesalahan yang dicegah: menjumlahkan SEMUA underCogs (termasuk yang untung) sehingga kerugian tampak tertutup."
+    },
+    {
+      "id": "TC-BS-02",
+      "function": "calculateBudgetSafe",
+      "specRef": "TECH_SPEC.md §3.6",
+      "category": "happy-path",
+      "priority": "high",
+      "description": "Tidak ada SKU yang rugi = budget utuh 100%, status AMAN",
+      "input": {
+        "budgetCampaign": 10000000,
+        "skuList": [{ "sku": "SK-001", "underCogs": 500000, "isBelowCogs": false }]
+      },
+      "expected": {
+        "akumulasiUnderCogs": 0,
+        "budgetSafe": 10000000,
+        "budgetSafePercentage": 1,
+        "budgetStatus": "AMAN"
+      }
+    },
+    {
+      "id": "TC-BS-03",
+      "function": "calculateBudgetSafe",
+      "specRef": "TECH_SPEC.md §3.6",
+      "category": "boundary",
+      "priority": "critical",
+      "description": "BOUNDARY: budgetSafe tepat 30% = AMAN (waspada adalah < 0.3)",
+      "input": {
+        "budgetCampaign": 1000000,
+        "skuList": [{ "sku": "X", "underCogs": -700000, "isBelowCogs": true }]
+      },
+      "expected": {
+        "budgetSafe": 300000,
+        "budgetSafePercentage": 0.3,
+        "budgetStatus": "AMAN"
+      }
+    },
+    {
+      "id": "TC-BS-04",
+      "function": "calculateBudgetSafe",
+      "specRef": "TECH_SPEC.md §3.6",
+      "category": "boundary",
+      "priority": "critical",
+      "description": "BOUNDARY: budgetSafe tepat di bawah 30% = WASPADA",
+      "input": {
+        "budgetCampaign": 1000000,
+        "skuList": [{ "sku": "X", "underCogs": -700001, "isBelowCogs": true }]
+      },
+      "expected": {
+        "budgetSafe": 299999,
+        "budgetSafePercentage": 0.299999,
+        "budgetStatus": "WASPADA"
+      },
+      "tolerance": 1e-9
+    },
+    {
+      "id": "TC-BS-05",
+      "function": "calculateBudgetSafe",
+      "specRef": "TECH_SPEC.md §3.6",
+      "category": "boundary",
+      "priority": "critical",
+      "description": "BOUNDARY: budgetSafe tepat 10% = WASPADA (kritis adalah < 0.1)",
+      "input": {
+        "budgetCampaign": 1000000,
+        "skuList": [{ "sku": "X", "underCogs": -900000, "isBelowCogs": true }]
+      },
+      "expected": {
+        "budgetSafe": 100000,
+        "budgetSafePercentage": 0.1,
+        "budgetStatus": "WASPADA"
+      }
+    },
+    {
+      "id": "TC-BS-06",
+      "function": "calculateBudgetSafe",
+      "specRef": "TECH_SPEC.md §3.6",
+      "category": "boundary",
+      "priority": "critical",
+      "description": "BOUNDARY: budgetSafe tepat di bawah 10% = KRITIS",
+      "input": {
+        "budgetCampaign": 1000000,
+        "skuList": [{ "sku": "X", "underCogs": -900001, "isBelowCogs": true }]
+      },
+      "expected": {
+        "budgetSafe": 99999,
+        "budgetSafePercentage": 0.099999,
+        "budgetStatus": "KRITIS"
+      },
+      "tolerance": 1e-9
+    },
+    {
+      "id": "TC-BS-07",
+      "function": "calculateBudgetSafe",
+      "specRef": "TECH_SPEC.md §3.6",
+      "category": "edge-case",
+      "priority": "high",
+      "description": "Kerugian MELEBIHI budget: budgetSafe negatif, persentase negatif, status KRITIS",
+      "input": {
+        "budgetCampaign": 100000,
+        "skuList": [{ "sku": "X", "underCogs": -150000, "isBelowCogs": true }]
+      },
+      "expected": {
+        "akumulasiUnderCogs": 150000,
+        "budgetSafe": -50000,
+        "budgetSafePercentage": -0.5,
+        "budgetStatus": "KRITIS"
+      }
+    },
+    {
+      "id": "TC-BS-08",
+      "function": "calculateBudgetSafe",
+      "specRef": "TECH_SPEC.md §3.6 (guard) + learnings.md #4",
+      "category": "zero-division",
+      "priority": "critical",
+      "description": "ZERO-DIVISION GUARD: budgetCampaign 0 harus menghasilkan budgetSafePercentage 0 secara eksplisit, BUKAN NaN/Infinity",
+      "input": {
+        "budgetCampaign": 0,
+        "skuList": [{ "sku": "X", "underCogs": -50000, "isBelowCogs": true }]
+      },
+      "expected": {
+        "akumulasiUnderCogs": 50000,
+        "budgetSafe": -50000,
+        "budgetSafePercentage": 0,
+        "budgetStatus": "KRITIS"
+      },
+      "assertNotNaNOrInfinity": true,
+      "regressionFor": "learnings.md #4",
+      "note": "Defense in depth. Kondisi ini idealnya sudah tertangkap sebagai Empty State di level ViewModel (lihat TC-VM-02), tapi guard di dalam fungsi tetap wajib ada."
+    },
+    {
+      "id": "TC-BS-09",
+      "function": "calculateBudgetSafe",
+      "specRef": "TECH_SPEC.md §3.6",
+      "category": "edge-case",
+      "priority": "medium",
+      "description": "skuList kosong = tidak ada kerugian, budget utuh",
+      "input": { "budgetCampaign": 5000000, "skuList": [] },
+      "expected": {
+        "akumulasiUnderCogs": 0,
+        "budgetSafe": 5000000,
+        "budgetSafePercentage": 1,
+        "budgetStatus": "AMAN"
+      }
+    },
+
+    {
+      "id": "TC-SORT-01",
+      "function": "sortByPriority",
+      "specRef": "TECH_SPEC.md §3.5",
+      "category": "happy-path",
+      "priority": "critical",
+      "description": "Urutan utama berdasarkan severity: KRITIS di atas, lalu WASPADA, lalu AMAN",
+      "input": [
+        { "sku": "A-AMAN", "overallStatus": "AMAN", "stockStatus": "AMAN", "marginStatus": "AMAN", "jamSampaiHabis": 50 },
+        { "sku": "B-KRITIS", "overallStatus": "KRITIS", "stockStatus": "KRITIS", "marginStatus": "AMAN", "jamSampaiHabis": 3 },
+        { "sku": "C-WASPADA", "overallStatus": "WASPADA", "stockStatus": "WASPADA", "marginStatus": "AMAN", "jamSampaiHabis": 12 }
+      ],
+      "expected": { "orderBySku": ["B-KRITIS", "C-WASPADA", "A-AMAN"] }
+    },
+    {
+      "id": "TC-SORT-02",
+      "function": "sortByPriority",
+      "specRef": "TECH_SPEC.md §3.5",
+      "category": "happy-path",
+      "priority": "critical",
+      "description": "Severity sama (KRITIS): SKU dengan KEDUA kondisi kritis naik lebih dulu, meski runway-nya lebih panjang",
+      "input": [
+        { "sku": "SINGLE-CRIT", "overallStatus": "KRITIS", "stockStatus": "KRITIS", "marginStatus": "AMAN", "jamSampaiHabis": 1 },
+        { "sku": "DOUBLE-CRIT", "overallStatus": "KRITIS", "stockStatus": "KRITIS", "marginStatus": "KRITIS", "jamSampaiHabis": 5 }
+      ],
+      "expected": { "orderBySku": ["DOUBLE-CRIT", "SINGLE-CRIT"] },
+      "note": "Menguji tie-breaker level 2 mendahului tie-breaker level 3 (jamSampaiHabis)."
+    },
+    {
+      "id": "TC-SORT-03",
+      "function": "sortByPriority",
+      "specRef": "TECH_SPEC.md §3.5",
+      "category": "happy-path",
+      "priority": "high",
+      "description": "Severity sama dan kondisi kritis sama: runway lebih pendek naik lebih dulu",
+      "input": [
+        { "sku": "LATER", "overallStatus": "KRITIS", "stockStatus": "KRITIS", "marginStatus": "AMAN", "jamSampaiHabis": 5 },
+        { "sku": "SOONER", "overallStatus": "KRITIS", "stockStatus": "KRITIS", "marginStatus": "AMAN", "jamSampaiHabis": 1 }
+      ],
+      "expected": { "orderBySku": ["SOONER", "LATER"] }
+    },
+    {
+      "id": "TC-SORT-04",
+      "function": "sortByPriority",
+      "specRef": "TECH_SPEC.md §3.5 + learnings.md #1",
+      "category": "edge-case",
+      "priority": "critical",
+      "description": "jamSampaiHabis null harus selalu di urutan paling bawah dalam grup severity yang sama (diperlakukan sebagai Infinity), tanpa merusak sorting",
+      "input": [
+        { "sku": "NULL-RUNWAY", "overallStatus": "AMAN", "stockStatus": "AMAN", "marginStatus": "AMAN", "jamSampaiHabis": null },
+        { "sku": "LONG-RUNWAY", "overallStatus": "AMAN", "stockStatus": "AMAN", "marginStatus": "AMAN", "jamSampaiHabis": 390 },
+        { "sku": "SHORT-RUNWAY", "overallStatus": "AMAN", "stockStatus": "AMAN", "marginStatus": "AMAN", "jamSampaiHabis": 50 }
+      ],
+      "expected": { "orderBySku": ["SHORT-RUNWAY", "LONG-RUNWAY", "NULL-RUNWAY"] },
+      "regressionFor": "learnings.md #1"
+    },
+    {
+      "id": "TC-SORT-05",
+      "function": "sortByPriority",
+      "specRef": "TECH_SPEC.md §3.5",
+      "category": "edge-case",
+      "priority": "high",
+      "description": "PURITY: fungsi tidak boleh memutasi array input (harus return array baru)",
+      "input": [
+        { "sku": "A", "overallStatus": "AMAN", "stockStatus": "AMAN", "marginStatus": "AMAN", "jamSampaiHabis": 50 },
+        { "sku": "B", "overallStatus": "KRITIS", "stockStatus": "KRITIS", "marginStatus": "AMAN", "jamSampaiHabis": 3 }
+      ],
+      "expected": {
+        "orderBySku": ["B", "A"],
+        "inputArrayUnchangedOrderBySku": ["A", "B"]
+      },
+      "note": "Sesuai TECH_SPEC.md §1 (pure functions, no side effect). Implementasi wajib pakai [...list].sort(), bukan list.sort()."
+    },
+    {
+      "id": "TC-SORT-06",
+      "function": "sortByPriority",
+      "specRef": "TECH_SPEC.md §3.5 + §4 case 6",
+      "category": "edge-case",
+      "priority": "medium",
+      "description": "Semua SKU AMAN tetap terurut oleh runway (kondisi valid, bukan bug)",
+      "input": [
+        { "sku": "P", "overallStatus": "AMAN", "stockStatus": "AMAN", "marginStatus": "AMAN", "jamSampaiHabis": 100 },
+        { "sku": "Q", "overallStatus": "AMAN", "stockStatus": "AMAN", "marginStatus": "AMAN", "jamSampaiHabis": 30 }
+      ],
+      "expected": { "orderBySku": ["Q", "P"] }
+    },
+    {
+      "id": "TC-SORT-07",
+      "function": "sortByPriority",
+      "specRef": "TECH_SPEC.md §3.5",
+      "category": "edge-case",
+      "priority": "low",
+      "description": "Array kosong tidak error, return array kosong",
+      "input": [],
+      "expected": { "orderBySku": [] }
+    },
+
+    {
+      "id": "TC-REC-01",
+      "function": "generateRecommendation",
+      "specRef": "TECH_SPEC.md §3.7 + learnings.md #2",
+      "category": "happy-path",
+      "priority": "critical",
+      "description": "OVERSELL: rekomendasi harus soal sinkronisasi data, TIDAK boleh menyarankan replenish",
+      "input": { "isOversold": true, "stockStatus": "KRITIS", "marginStatus": "AMAN", "jamSampaiHabis": 0 },
+      "expected": {
+        "mustContain": ["oversell", "sinkron"],
+        "mustNotContain": ["Replenish dari gudang lain"]
+      },
+      "regressionFor": "learnings.md #2",
+      "note": "Oversell = indikasi data mismatch, bukan stock fisik habis. Menyarankan replenish di sini menyesatkan."
+    },
+    {
+      "id": "TC-REC-02",
+      "function": "generateRecommendation",
+      "specRef": "TECH_SPEC.md §3.7",
+      "category": "happy-path",
+      "priority": "critical",
+      "description": "Kritis ganda (stock + margin): rekomendasi memprioritaskan delist untuk hentikan kerugian, dan menyebut angka jam",
+      "input": { "isOversold": false, "stockStatus": "KRITIS", "marginStatus": "KRITIS", "jamSampaiHabis": 3.25 },
+      "expected": {
+        "mustContain": ["3.3", "delist"],
+        "mustNotContain": ["NaN", "Infinity", "undefined", "null"]
+      },
+      "note": "jamSampaiHabis diformat dengan toFixed(1) sehingga 3.25 menjadi '3.3'."
+    },
+    {
+      "id": "TC-REC-03",
+      "function": "generateRecommendation",
+      "specRef": "TECH_SPEC.md §3.7",
+      "category": "happy-path",
+      "priority": "high",
+      "description": "Stock kritis saja: rekomendasi soal replenish, menyebut angka jam",
+      "input": { "isOversold": false, "stockStatus": "KRITIS", "marginStatus": "AMAN", "jamSampaiHabis": 5.5 },
+      "expected": {
+        "mustContain": ["5.5", "Replenish"],
+        "mustNotContain": ["NaN", "Infinity", "undefined", "null"]
+      }
+    },
+    {
+      "id": "TC-REC-04",
+      "function": "generateRecommendation",
+      "specRef": "TECH_SPEC.md §3.7",
+      "category": "happy-path",
+      "priority": "critical",
+      "description": "Margin kritis saja: rekomendasi menyebut voucher sebagai penyebab, bukan soal stock",
+      "input": { "isOversold": false, "stockStatus": "AMAN", "marginStatus": "KRITIS", "jamSampaiHabis": 54.5 },
+      "expected": {
+        "mustContain": ["COGS", "voucher"],
+        "mustNotContain": ["Replenish", "NaN", "Infinity"]
+      }
+    },
+    {
+      "id": "TC-REC-05",
+      "function": "generateRecommendation",
+      "specRef": "TECH_SPEC.md §3.7",
+      "category": "happy-path",
+      "priority": "medium",
+      "description": "Stock waspada: rekomendasi bersifat pantau, bukan tindakan mendesak",
+      "input": { "isOversold": false, "stockStatus": "WASPADA", "marginStatus": "AMAN", "jamSampaiHabis": 12 },
+      "expected": { "mustContain": ["Pantau"] }
+    },
+    {
+      "id": "TC-REC-06",
+      "function": "generateRecommendation",
+      "specRef": "TECH_SPEC.md §3.7",
+      "category": "happy-path",
+      "priority": "medium",
+      "description": "Margin waspada: rekomendasi soal margin menipis",
+      "input": { "isOversold": false, "stockStatus": "AMAN", "marginStatus": "WASPADA", "jamSampaiHabis": 50 },
+      "expected": { "mustContain": ["Margin menipis"] }
+    },
+    {
+      "id": "TC-REC-07",
+      "function": "generateRecommendation",
+      "specRef": "TECH_SPEC.md §3.7",
+      "category": "happy-path",
+      "priority": "high",
+      "description": "Semua sehat: rekomendasi menyatakan tidak ada tindakan mendesak",
+      "input": { "isOversold": false, "stockStatus": "AMAN", "marginStatus": "AMAN", "jamSampaiHabis": 50 },
+      "expected": { "mustContain": ["sehat"] }
+    },
+    {
+      "id": "TC-REC-08",
+      "function": "generateRecommendation",
+      "specRef": "TECH_SPEC.md §3.7 + learnings.md #1",
+      "category": "edge-case",
+      "priority": "critical",
+      "description": "jamSampaiHabis null (status AMAN) tidak boleh memunculkan teks 'null'/'NaN'/'undefined' di rekomendasi",
+      "input": { "isOversold": false, "stockStatus": "AMAN", "marginStatus": "AMAN", "jamSampaiHabis": null },
+      "expected": {
+        "mustContain": ["sehat"],
+        "mustNotContain": ["null", "NaN", "undefined", "Infinity"]
+      },
+      "regressionFor": "learnings.md #1"
+    },
+
+    {
+      "id": "TC-VM-01",
+      "function": "buildActionRadarViewModel",
+      "specRef": "TECH_SPEC.md §2.2, §6",
+      "category": "edge-case",
+      "priority": "critical",
+      "description": "EMPTY STATE: skuList kosong harus menghasilkan hasData false",
+      "input": { "campaign": { "name": "Test", "budgetCampaign": 15000000, "campaignElapsedHours": 4 }, "skus": [] },
+      "expected": { "hasData": false }
+    },
+    {
+      "id": "TC-VM-02",
+      "function": "buildActionRadarViewModel",
+      "specRef": "TECH_SPEC.md §2.2, §4 case 4 + learnings.md #4",
+      "category": "edge-case",
+      "priority": "critical",
+      "description": "EMPTY STATE: budgetCampaign 0 (belum diisi Fiona) harus menghasilkan hasData false",
+      "input": {
+        "campaign": { "name": "Test", "budgetCampaign": 0, "campaignElapsedHours": 4 },
+        "skus": [{ "sku": "X", "cogsPerUnit": 10000, "stockGudang": [{ "lokasi": "G", "sisaStock": 100 }], "qtyTerjualCampaignBerjalan": 10, "revenueNetCampaignBerjalan": 200000, "cogsCampaignBerjalan": 100000 }]
+      },
+      "expected": { "hasData": false },
+      "regressionFor": "learnings.md #4"
+    },
+    {
+      "id": "TC-VM-03",
+      "function": "buildActionRadarViewModel",
+      "specRef": "TECH_SPEC.md §2.2",
+      "category": "happy-path",
+      "priority": "high",
+      "description": "Data valid (ada SKU dan budget terisi) menghasilkan hasData true",
+      "input": {
+        "campaign": { "name": "Test", "budgetCampaign": 15000000, "campaignElapsedHours": 4 },
+        "skus": [{ "sku": "X", "cogsPerUnit": 10000, "stockGudang": [{ "lokasi": "G", "sisaStock": 100 }], "qtyTerjualCampaignBerjalan": 10, "revenueNetCampaignBerjalan": 200000, "cogsCampaignBerjalan": 100000 }]
+      },
+      "expected": { "hasData": true }
+    },
+    {
+      "id": "TC-VM-04",
+      "function": "buildActionRadarViewModel",
+      "specRef": "TECH_SPEC.md §2.2 (totalSisaStock)",
+      "category": "happy-path",
+      "priority": "high",
+      "description": "totalSisaStock adalah penjumlahan SEMUA lokasi gudang (bukan satu lokasi saja) — inilah yang menutup gap 'out-of-stock palsu per seller center'",
+      "input": {
+        "campaign": { "name": "Test", "budgetCampaign": 15000000, "campaignElapsedHours": 4 },
+        "skus": [{ "sku": "MULTI", "cogsPerUnit": 10000, "stockGudang": [{ "lokasi": "Jakarta", "sisaStock": 0 }, { "lokasi": "Bandung", "sisaStock": 500 }], "qtyTerjualCampaignBerjalan": 10, "revenueNetCampaignBerjalan": 200000, "cogsCampaignBerjalan": 100000 }]
+      },
+      "expected": {
+        "hasData": true,
+        "skuList": [{ "sku": "MULTI", "totalSisaStock": 500, "isOversold": false, "stockStatus": "AMAN" }]
+      },
+      "note": "Kasus persis dari raw problem statement Fiona: satu lokasi tampak 0 padahal total gudang masih 500 unit. Tidak boleh dianggap out-of-stock."
+    },
+
+    {
+      "id": "TC-INT-01",
+      "function": "buildActionRadarViewModel",
+      "specRef": "TECH_SPEC.md §6 (data flow) + sample_data.json",
+      "category": "integration",
+      "priority": "critical",
+      "description": "END-TO-END terhadap sample_data.json: metrik setiap SKU sesuai perhitungan spec",
+      "input": { "source": "sample_data.json" },
+      "expected": {
+        "hasData": true,
+        "campaignName": "Double-Day Mega Campaign 10.10",
+        "skuMetrics": [
+          { "sku": "SK-001", "totalSisaStock": 225, "runratePerJam": 4.5, "jamSampaiHabis": 50, "isOversold": false, "underCogs": 278000, "isBelowCogs": false, "stockStatus": "AMAN", "marginStatus": "AMAN", "overallStatus": "AMAN" },
+          { "sku": "SK-007", "totalSisaStock": 14, "runratePerJam": 2.25, "jamSampaiHabis": 6.222222222222222, "isOversold": false, "underCogs": 473000, "isBelowCogs": false, "stockStatus": "WASPADA", "marginStatus": "AMAN", "overallStatus": "WASPADA" },
+          { "sku": "HC-005", "totalSisaStock": 15, "runratePerJam": 1.25, "jamSampaiHabis": 12, "isOversold": false, "underCogs": -23600, "isBelowCogs": true, "stockStatus": "WASPADA", "marginStatus": "KRITIS", "overallStatus": "KRITIS" },
+          { "sku": "MU-003", "totalSisaStock": 109, "runratePerJam": 2, "jamSampaiHabis": 54.5, "isOversold": false, "underCogs": -49600, "isBelowCogs": true, "stockStatus": "AMAN", "marginStatus": "KRITIS", "overallStatus": "KRITIS" },
+          { "sku": "FR-002", "totalSisaStock": -3, "runratePerJam": 3, "jamSampaiHabis": 0, "isOversold": true, "underCogs": 1548000, "isBelowCogs": false, "stockStatus": "KRITIS", "marginStatus": "AMAN", "overallStatus": "KRITIS" },
+          { "sku": "MU-005", "totalSisaStock": 195, "runratePerJam": 0.5, "jamSampaiHabis": 390, "isOversold": false, "underCogs": 40200, "isBelowCogs": false, "stockStatus": "AMAN", "marginStatus": "AMAN", "overallStatus": "AMAN" },
+          { "sku": "BC-999", "totalSisaStock": 50, "runratePerJam": 0, "jamSampaiHabis": null, "isOversold": false, "underCogs": 0, "isBelowCogs": false, "stockStatus": "AMAN", "marginStatus": "AMAN", "overallStatus": "AMAN" }
+        ]
+      },
+      "tolerance": 1e-9
+    },
+    {
+      "id": "TC-INT-02",
+      "function": "sortByPriority",
+      "specRef": "TECH_SPEC.md §3.5 + sample_data.json",
+      "category": "integration",
+      "priority": "critical",
+      "description": "END-TO-END urutan list dari sample_data.json: KRITIS (urut runway terpendek) → WASPADA → AMAN (urut runway, null terakhir)",
+      "input": { "source": "sample_data.json" },
+      "expected": {
+        "orderBySku": ["FR-002", "HC-005", "MU-003", "SK-007", "SK-001", "MU-005", "BC-999"]
+      },
+      "note": "FR-002 teratas karena oversell (runway 0). BC-999 terbawah karena runway null. Tidak ada SKU dengan kritis ganda di sample data ini, sehingga tie-breaker yang menentukan adalah runway."
+    },
+    {
+      "id": "TC-INT-03",
+      "function": "calculateBudgetSafe",
+      "specRef": "TECH_SPEC.md §3.6 + sample_data.json",
+      "category": "integration",
+      "priority": "critical",
+      "description": "END-TO-END Budget Safe dari sample_data.json: hanya HC-005 (-23.600) dan MU-003 (-49.600) yang dihitung sebagai kerugian",
+      "input": { "source": "sample_data.json" },
+      "expected": {
+        "budgetCampaign": 15000000,
+        "akumulasiUnderCogs": 73200,
+        "budgetSafe": 14926800,
+        "budgetSafePercentage": 0.99512,
+        "budgetStatus": "AMAN"
+      },
+      "tolerance": 1e-9,
+      "regressionFor": "learnings.md #3",
+      "note": "FR-002 untung besar (1.548.000) TIDAK boleh menutupi/mengurangi akumulasi kerugian."
+    },
+    {
+      "id": "TC-INT-04",
+      "function": "buildActionRadarViewModel",
+      "specRef": "TECH_SPEC.md §1 (strict edge boundaries)",
+      "category": "architecture",
+      "priority": "critical",
+      "description": "BOUNDARY ENFORCEMENT: seluruh pipeline kalkulasi tidak melakukan network call, tidak akses DB, tidak butuh auth, dan tidak menulis data",
+      "input": { "source": "sample_data.json" },
+      "expected": {
+        "noNetworkCalls": true,
+        "noDatabaseAccess": true,
+        "noAuthRequired": true,
+        "noWriteBack": true,
+        "isPureFunction": true
+      },
+      "note": "Uji dengan memblokir fetch/XHR di test environment: pipeline harus tetap lulus. Lihat TECH_SPEC.md §1."
+    },
+    {
+      "id": "TC-INT-05",
+      "function": "buildActionRadarViewModel",
+      "specRef": "TECH_SPEC.md §1, §3 + learnings.md §2",
+      "category": "invariant",
+      "priority": "critical",
+      "description": "INVARIANT GLOBAL: tidak ada satu pun field numerik di output ViewModel yang bernilai NaN atau Infinity, untuk SEMUA SKU di sample_data.json",
+      "input": { "source": "sample_data.json" },
+      "expected": {
+        "everyNumericFieldIsFinite": true,
+        "jamSampaiHabisIsNumberOrNull": true
+      },
+      "assertNotNaNOrInfinity": true,
+      "regressionFor": "learnings.md #1, #4, #5",
+      "note": "Ini jaring pengaman terakhir terhadap seluruh kelas bug zero-division yang tercatat di learnings.md."
+    }
+  ]
+}
